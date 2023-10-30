@@ -43,6 +43,19 @@ public class Main {
 
         String[] namesOfLine = new String[] {"фамилия", "имя", "отчество", "дата рождения", "номер телефона", "пол"};
 
+        int codeResult = normalize(dates, namesOfLine);
+        switch (codeResult) {
+            case 0 -> System.out.println("Информация не внесена!");
+            case -1 -> System.out.println("Проверь фамилию, имя и отчество, мало букв");
+            case -2 -> System.out.println("В номере телефона не хватает цифр");
+            case -3 -> System.out.println("В номере телефона слишком много циферок");
+            case -4 -> System.out.println("Некорректно введен пол");
+            case -5 -> System.out.println("Не знаю такого пола, укажи другую букву");
+            default -> {
+                createNewFile(dates);
+            }
+        }
+
         try {
             isNumeric(dates, namesOfLine);
         }
@@ -63,91 +76,115 @@ public class Main {
         catch (NumberFormatException e) {
             System.out.println(e.getMessage());
         }
+     }
 
-        int codeResult = normalize(dates, namesOfLine);
-        switch (codeResult) {
-            case 0 -> System.out.println("Информация не внесена!");
-            case -1 -> System.out.println("Проверь фамилию, имя и отчество, мало букв");
-            case -2 -> System.out.println("В номере телефона не хватает цифр");
-            case -3 -> System.out.println("В номере телефона слишком много циферок");
-            case -4 -> System.out.println("Не знаю такого пола, укажи другую букву");
-            default -> {
-                createNewFile(dates);
-            }
-        }
-    }
-
-
+    /**
+     * Вывод кода ошибки
+     * @param dates список вводимых данных с консоли
+     * @param strings список наименований строк
+     * @return числовое значение
+     */
     static int normalize(List<String> dates, String[] strings) {
         if (dates == null || dates.isEmpty()) {
             return 0;
         }
+
         int i = 0;
         for (String s : dates) {
             if (s.isEmpty()) System.out.println("Пусто в строке \"" + strings[i] + "\"");
             i++;
         }
 
+        int j = 0;
         for (String s : dates.subList(0, 3)) {
-            int j = 0;
             if (s.length() < 2) {
-                System.out.println(strings[j] + " меньше двух символов"); //todo некорректно отображается j в выводе
-                ++j;
+                System.out.println(strings[j] + " меньше двух символов");
+                j++;
             }
-//            return -1; удалить также выше
         }
-        if (dates.get(4).length() < 10) {
+
+        if (dates.get(4).length() > 0 && dates.get(4).length() < 10) {
             return -2;
         }
         if (dates.get(4).length() > 10) {
             return -3;
         }
-        if (!dates.get(5).equals("f") && !dates.get(5).equals("m")) { // TODO СРАВНЕНИЕ НЕ РАБОТАЕТ
+        if (dates.get(5).length() > 1) {
             return -4;
+        }
+        if (!dates.get(5).equals("f") & !dates.get(5).equals("m")) {
+            return -5;
         }
         return dates.size();
     }
 
-    static boolean isNumeric(List<String> dates, String[] str) throws NumberFormatException {
-        try {
-            for (int i = 0; i < dates.size() - 3; i++) { // проход по строкам ФИО
-                Integer.parseInt(dates.get(i));
-                System.out.println("Неверный формат " + str[i]);
+
+    /**
+     * Проверка, что ФИО введено не цифрами
+     * @param dates список вводимых данных с консоли
+     * @param str список наименований строк
+     * @return true or false
+     * @throws NumberFormatException Неверный формат одного из поля ФИО
+     */
+
+    static void isNumeric(List<String> dates, String[] str)  {
+        int i = 0;
+        for (String s : dates.subList(0, 3)) {
+            try {
+                if (s.matches(".*\\d+.*")){
+                    throw new NumberFormatException();
+                }
+
+            } catch (NumberFormatException e) {
+                System.out.println(str[i] + " содержит число");
             }
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
+            i++;
         }
     }
 
+
+
+    /**
+     * Проверка номера телефона на корректность ввода, что введен не буквами
+     * @param phoneNumber номер телефона, введенный с консоли
+     * @return true or false
+     * @throws NumberFormatException Неверный формат номера телефона
+     */
     static boolean checkPhoneNumber(String phoneNumber) throws NumberFormatException {
-        try{
-            boolean containsOnlyDigits = !phoneNumber.matches("^[0-9]+$");
-            System.out.println("Неверный формат номера телефона");
-            return true;
+        if (!phoneNumber.isEmpty()) {
+            try {
+                boolean containsOnlyDigits = phoneNumber.matches("^[0-9]+$");
+                return true;
+            } catch (NumberFormatException e) {
+                System.out.println("Неверный формат номера телефона");
+                return false;
+            }
         }
-        catch (NumberFormatException e){
-            return false;
-        }
+        return false;
     }
 
 
+    /**
+     * Проверка даты рождения на корректность ввода согласно формату дд.мм.гггг
+     * @param dateOfBirth дата рождения, введенная с консоли
+     * @throws ParseException Неверный формат даты рождения
+     */
     static void birthDayFormat(String dateOfBirth) throws ParseException {
-        try {
-            SimpleDateFormat format = new SimpleDateFormat("d.M.y");
-            Date date = format.parse(dateOfBirth);
-        } catch (ParseException e) {
-            throw new ParseException("Неверный формат даты рождения", e.getErrorOffset());
+        if (!dateOfBirth.isEmpty()) {
+            try {
+                SimpleDateFormat format = new SimpleDateFormat("d.M.y");
+                Date date = format.parse(dateOfBirth);
+            } catch (ParseException e) {
+                throw new ParseException("Неверный формат даты рождения", e.getErrorOffset());
+            }
         }
     }
 
 
     /**
-     * Создание нового файла с названием равным фамилии
-     *
-     * @param dates список вводимых данных
+     * Создание нового файла с названием равным фамилии после проверки, что все введенные данные корректны
+     * @param dates список вводимых данных с консоли
      */
-
     // При возникновении проблемы с чтением-записью в файл, исключение должно быть корректно обработано,
     // пользователь должен увидеть стектрейс ошибки.
     static void createNewFile(List<String> dates) {
